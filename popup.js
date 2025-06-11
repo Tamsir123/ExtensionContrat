@@ -136,17 +136,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         // Afficher les boutons
         actionButtons.classList.remove('hidden');
+        copyBtn.style.display = 'flex'; // S'assurer que le bouton de copie est visible
     }
     
     function showContractNotFound() {
         statusCard.className = 'status-card not-found';
         statusIcon.textContent = '❌';
         statusText.textContent = 'Aucun contrat détecté';
-        statusDescription.textContent = 'Essayez sur une page contenant des CGU ou termes et conditions';
+        statusDescription.textContent = 'Cette page ne semble pas contenir de CGU ou conditions d\'utilisation';
+        
+        // Masquer l'aperçu des termes
+        termsPreview.classList.add('hidden');
         
         // Afficher quand même le bouton pour aller sur le site
         actionButtons.classList.remove('hidden');
-        analyzeBtn.innerHTML = '<span class="icon">🌐</span>Ouvrir ClairContrat';
+        analyzeBtn.innerHTML = '<span class="icon">🌐</span>Ouvrir Consent Radar';
+        
+        // Masquer le bouton de copie puisqu'il n'y a rien à copier
+        copyBtn.style.display = 'none';
     }
     
     function showError() {
@@ -256,24 +263,34 @@ function detectContractsAndTerms() {
             }
         }
         
-        // Score pour les mots-clés principaux
+        // Score pour les mots-clés principaux (plus strict)
         let hasMainKeyword = false;
         contractKeywords.forEach(keyword => {
             if (lowerText.includes(keyword.toLowerCase())) {
-                score += keyword.length * 4;
+                score += keyword.length * 6; // Plus de poids aux mots-clés principaux
                 hasMainKeyword = true;
             }
         });
         
-        // Score pour les mots-clés courts (seulement si pas de mot-clé principal)
+        // Score pour les mots-clés courts (seulement si pas de mot-clé principal et contexte approprié)
         if (!hasMainKeyword) {
             shortKeywords.forEach(keyword => {
                 if (lowerText.includes(keyword.toLowerCase())) {
-                    score += keyword.length * 2;
+                    // Vérifier le contexte autour du mot-clé
+                    const keywordIndex = lowerText.indexOf(keyword.toLowerCase());
+                    const context = lowerText.substring(Math.max(0, keywordIndex - 50), keywordIndex + 50);
+                    
+                    // N'ajouter du score que si le contexte semble juridique
+                    if (context.includes('condition') || context.includes('legal') || 
+                        context.includes('utilisation') || context.includes('service') ||
+                        context.includes('agreement') || context.includes('terms')) {
+                        score += keyword.length * 3;
+                    }
                 }
             });
         }
         
+        // Retourner 0 si aucun vrai mot-clé n'est trouvé
         if (score === 0) return 0;
         
         // Bonus pour les éléments structurels
@@ -290,13 +307,15 @@ function detectContractsAndTerms() {
             score += 30;
         }
         
-        // Bonus pour la longueur du contenu
-        if (text.length > 2000) {
-            score += 30;
-        } else if (text.length > 1000) {
-            score += 20;
-        } else if (text.length > 500) {
-            score += 10;
+        // Bonus pour la longueur du contenu (plus strict)
+        if (text.length > 3000) {
+            score += 40;
+        } else if (text.length > 1500) {
+            score += 25;
+        } else if (text.length > 800) {
+            score += 15;
+        } else if (text.length < 300) {
+            score = Math.max(0, score - 20); // Pénalité pour contenu trop court
         }
         
         // Bonus pour les mots juridiques
@@ -326,101 +345,147 @@ function detectContractsAndTerms() {
         return 'contract-' + Math.random().toString(36).substr(2, 9);
     }
     
-    // Rechercher dans les liens
+    // Rechercher dans les liens (plus strict)
     document.querySelectorAll('a').forEach(link => {
         const linkText = link.textContent.trim();
-        const score = calculateScore(link, linkText);
+        const href = link.href || '';
         
-        if (score > maxScore && score > 20) {
-            const elementId = generateElementId();
-            link.setAttribute('data-contract-id', elementId);
+        // Vérifier que le lien pointe vers une page de CGU/conditions
+        const isLegalUrl = /\/(terms|conditions|legal|cgu|cgv|privacy|policy|mentions)/i.test(href);
+        
+        if (isLegalUrl || linkText.length > 10) { // Soit URL légale, soit texte substantiel
+            const score = calculateScore(link, linkText);
             
-            maxScore = score;
-            bestMatch = {
-                element: link,
-                text: linkText,
-                isLink: true,
-                href: link.href,
-                elementId: elementId,
-                score: score
-            };
+            if (score > maxScore && score > 30) { // Score minimum plus élevé pour les liens
+                const elementId = generateElementId();
+                link.setAttribute('data-contract-id', elementId);
+                
+                maxScore = score;
+                bestMatch = {
+                    element: link,
+                    text: linkText,
+                    isLink: true,
+                    href: link.href,
+                    elementId: elementId,
+                    score: score
+                };
+            }
         }
     });
     
-    // Rechercher dans les titres
+    // Rechercher dans les titres (plus strict)
     document.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach(heading => {
         const headingText = heading.textContent.trim();
         const score = calculateScore(heading, headingText);
         
-        if (score > maxScore && score > 25) {
+        if (score > maxScore && score > 40) { // Score minimum plus élevé
             // Collecter le contenu suivant
             let content = headingText;
             let nextElement = heading.nextElementSibling;
             let contentElements = [heading];
+            let totalTextLength = headingText.length;
             
-            while (nextElement && !nextElement.matches('h1, h2, h3, h4, h5, h6') && contentElements.length < 15) {
-                if (nextElement.textContent.trim()) {
-                    content += '\n\n' + nextElement.textContent.trim();
+            while (nextElement && !nextElement.matches('h1, h2, h3, h4, h5, h6') && contentElements.length < 10) {
+                if (nextElement.textContent.trim() && totalTextLength < 8000) {
+                    const elementText = nextElement.textContent.trim();
+                    content += '\n\n' + elementText;
                     contentElements.push(nextElement);
+                    totalTextLength += elementText.length;
                 }
                 nextElement = nextElement.nextElementSibling;
                 
-                if (content.length > 15000) break;
+                if (totalTextLength > 8000) break;
             }
             
-            const elementId = generateElementId();
-            contentElements.forEach(el => {
-                el.setAttribute('data-contract-id', elementId);
-            });
-            
-            maxScore = score;
-            bestMatch = {
-                element: heading,
-                text: content,
-                isLink: false,
-                title: headingText,
-                elementId: elementId,
-                score: score
-            };
+            // Vérifier que le contenu collecté est substantiel
+            if (content.length > 800) { // Au moins 800 caractères
+                const elementId = generateElementId();
+                contentElements.forEach(el => {
+                    el.setAttribute('data-contract-id', elementId);
+                });
+                
+                maxScore = score;
+                bestMatch = {
+                    element: heading,
+                    text: content,
+                    isLink: false,
+                    title: headingText,
+                    elementId: elementId,
+                    score: score
+                };
+            }
         }
     });
     
-    // Rechercher dans les sections
+    // Rechercher dans les sections (beaucoup plus strict)
     document.querySelectorAll('div, section, article, main').forEach(section => {
         const sectionText = section.textContent.trim();
-        if (sectionText.length < 300) return;
+        if (sectionText.length < 800) return; // Minimum plus élevé
         
         const score = calculateScore(section, sectionText);
         
-        if (score > maxScore && score > 30) {
-            const elementId = generateElementId();
-            section.setAttribute('data-contract-id', elementId);
+        if (score > maxScore && score > 60) { // Score minimum beaucoup plus élevé
+            // Vérifier que ce n'est pas juste du texte générique
+            const lowerText = sectionText.toLowerCase();
+            const hasMultipleKeywords = contractKeywords.filter(keyword => 
+                lowerText.includes(keyword.toLowerCase())
+            ).length >= 2; // Au moins 2 mots-clés différents
             
-            maxScore = score;
-            bestMatch = {
-                element: section,
-                text: sectionText.length > 10000 ? sectionText.substring(0, 10000) + '...' : sectionText,
-                isLink: false,
-                title: 'Contrat ou conditions générales détectés',
-                elementId: elementId,
-                score: score
-            };
+            if (hasMultipleKeywords) {
+                const elementId = generateElementId();
+                section.setAttribute('data-contract-id', elementId);
+                
+                maxScore = score;
+                bestMatch = {
+                    element: section,
+                    text: sectionText.length > 10000 ? sectionText.substring(0, 10000) + '...' : sectionText,
+                    isLink: false,
+                    title: 'Contrat ou conditions générales détectés',
+                    elementId: elementId,
+                    score: score
+                };
+            }
         }
     });
     
-    // Retourner le résultat
-    if (bestMatch && maxScore > 35) {
-        console.log('Contrat détecté avec score:', maxScore);
-        return {
-            found: true,
-            title: bestMatch.title || bestMatch.text.substring(0, 100) + '...',
-            content: bestMatch.text,
-            isLink: bestMatch.isLink,
-            href: bestMatch.href || null,
-            score: maxScore,
-            elementId: bestMatch.elementId,
-            url: window.location.href
-        };
+    // Validation stricte avant de retourner le résultat
+    if (bestMatch && maxScore > 50) { // Seuil plus élevé
+        // Validation supplémentaire : vérifier la longueur du contenu
+        const contentLength = bestMatch.text.length;
+        const hasSubstantialContent = contentLength > 500; // Au moins 500 caractères
+        
+        // Vérifier qu'il y a au moins 2 mots-clés juridiques différents
+        const lowerText = bestMatch.text.toLowerCase();
+        let keywordMatches = 0;
+        
+        contractKeywords.forEach(keyword => {
+            if (lowerText.includes(keyword.toLowerCase())) {
+                keywordMatches++;
+            }
+        });
+        
+        // Si c'est un lien, vérifier qu'il pointe vers une vraie page de CGU
+        if (bestMatch.isLink && bestMatch.href) {
+            const urlPattern = /\/(terms|conditions|legal|cgu|cgv|privacy|policy)/i;
+            if (!urlPattern.test(bestMatch.href)) {
+                keywordMatches = 0; // Invalider si l'URL ne semble pas être une page de CGU
+            }
+        }
+        
+        // Validation finale
+        if (hasSubstantialContent && keywordMatches >= 1) {
+            console.log('Contrat détecté avec score:', maxScore, 'Keywords:', keywordMatches, 'Longueur:', contentLength);
+            return {
+                found: true,
+                title: bestMatch.title || bestMatch.text.substring(0, 100) + '...',
+                content: bestMatch.text,
+                isLink: bestMatch.isLink,
+                href: bestMatch.href || null,
+                score: maxScore,
+                elementId: bestMatch.elementId,
+                url: window.location.href
+            };
+        }
     }
     
     console.log('Aucun contrat détecté. Score maximum:', maxScore);

@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let currentTab = null;
 
     // Configuration du site local
-    const LOCAL_SITE_URL = 'http://localhost:3000';
+    const LOCAL_SITE_URL = 'https://claircontrat-website.vercel.app/';
     
     try {
         // Obtenir l'onglet actuel

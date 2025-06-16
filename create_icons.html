@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur d'icônes - ConsentRadar</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        
+        .upload-area {
+            border: 3px dashed rgba(255, 255, 255, 0.5);
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .upload-area:hover {
+            border-color: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .upload-area.dragover {
+            border-color: #00d4aa;
+            background: rgba(0, 212, 170, 0.1);
+        }
+        
+        #fileInput {
+            display: none;
+        }
+        
+        .upload-text {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+        
+        .upload-hint {
+            opacity: 0.8;
+            font-size: 0.9em;
+        }
+        
+        .preview-section {
+            display: none;
+            margin-bottom: 30px;
+        }
+        
+        .original-preview {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .original-preview img {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 10px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        .icons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .icon-preview {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .icon-preview h3 {
+            margin: 0 0 15px 0;
+            font-size: 1.1em;
+        }
+        
+        .icon-preview canvas {
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            margin-bottom: 15px;
+        }
+        
+        .download-btn {
+            background: linear-gradient(135deg, #00d4aa, #00b894);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 212, 170, 0.4);
+        }
+        
+        .download-all {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .download-all-btn {
+            background: linear-gradient(135deg, #74b9ff, #0984e3);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+        }
+        
+        .download-all-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(116, 185, 255, 0.4);
+        }
+        
+        .instructions {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 30px;
+            border-left: 4px solid #00d4aa;
+        }
+        
+        .instructions h3 {
+            margin-top: 0;
+            color: #00d4aa;
+        }
+        
+        .instructions ol {
+            margin: 15px 0;
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Générateur d'icônes ConsentRadar</h1>
+        
+        <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+            <div class="upload-text">📁 Cliquez ici pour sélectionner votre logo CR</div>
+            <div class="upload-hint">Ou glissez-déposez votre image ici</div>
+            <input type="file" id="fileInput" accept="image/*">
+        </div>
+        
+        <div class="preview-section" id="previewSection">
+            <div class="original-preview">
+                <h3>🖼️ Image originale</h3>
+                <img id="originalImage" alt="Logo original">
+            </div>
+            
+            <div class="icons-grid">
+                <div class="icon-preview">
+                    <h3>icon16.png</h3>
+                    <canvas id="canvas16" width="16" height="16"></canvas>
+                    <button class="download-btn" onclick="downloadIcon('canvas16', 'icon16.png')">
+                        ⬇️ Télécharger
+                    </button>
+                </div>
+                
+                <div class="icon-preview">
+                    <h3>icon48.png</h3>
+                    <canvas id="canvas48" width="48" height="48"></canvas>
+                    <button class="download-btn" onclick="downloadIcon('canvas48', 'icon48.png')">
+                        ⬇️ Télécharger
+                    </button>
+                </div>
+                
+                <div class="icon-preview">
+                    <h3>icon128.png</h3>
+                    <canvas id="canvas128" width="128" height="128"></canvas>
+                    <button class="download-btn" onclick="downloadIcon('canvas128', 'icon128.png')">
+                        ⬇️ Télécharger
+                    </button>
+                </div>
+            </div>
+            
+            <div class="download-all">
+                <button class="download-all-btn" onclick="downloadAllIcons()">
+                    🎁 Télécharger toutes les icônes
+                </button>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h3>📋 Instructions</h3>
+            <ol>
+                <li>Sélectionnez ou glissez-déposez votre logo CR</li>
+                <li>Les icônes seront générées automatiquement aux 3 tailles requises</li>
+                <li>Téléchargez chaque icône individuellement ou toutes en même temps</li>
+                <li>Remplacez les fichiers existants dans votre dossier d'extension</li>
+                <li>Rechargez votre extension dans Chrome pour voir les changements</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const uploadArea = document.querySelector('.upload-area');
+        const previewSection = document.getElementById('previewSection');
+        const originalImage = document.getElementById('originalImage');
+        
+        // Gestion du drag & drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+        
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                alert('Veuillez sélectionner une image valide');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                originalImage.src = e.target.result;
+                originalImage.onload = () => {
+                    generateIcons();
+                    previewSection.style.display = 'block';
+                };
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        function generateIcons() {
+            const sizes = [16, 48, 128];
+            
+            sizes.forEach(size => {
+                const canvas = document.getElementById(`canvas${size}`);
+                const ctx = canvas.getContext('2d');
+                
+                // Configuration pour un rendu de haute qualité
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+                
+                // Vider le canvas
+                ctx.clearRect(0, 0, size, size);
+                
+                // Dessiner l'image redimensionnée
+                ctx.drawImage(originalImage, 0, 0, size, size);
+            });
+        }
+        
+        function downloadIcon(canvasId, filename) {
+            const canvas = document.getElementById(canvasId);
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+        
+        function downloadAllIcons() {
+            setTimeout(() => downloadIcon('canvas16', 'icon16.png'), 100);
+            setTimeout(() => downloadIcon('canvas48', 'icon48.png'), 300);
+            setTimeout(() => downloadIcon('canvas128', 'icon128.png'), 500);
+        }
+    </script>
+</body>
+</html>
+        </div>
+        
+        <div class="icon-preview">
+            <canvas id="icon48" width="48" height="48"></canvas>
+            <br>
+            <button onclick="downloadIcon('icon48', 'icon48.png')">Télécharger 48x48</button>
+        </div>
+        
+        <div class="icon-preview">
+            <canvas id="icon128" width="128" height="128"></canvas>
+            <br>
+            <button onclick="downloadIcon('icon128', 'icon128.png')">Télécharger 128x128</button>
+        </div>
+        
+        <button onclick="generateAllIcons()">Générer toutes les icônes</button>
+    </div>
+
+    <script>
+        // Fonction pour dessiner le logo CR
+        function drawLogo(ctx, size) {
+            const centerX = size / 2;
+            const centerY = size / 2;
+            const scale = size / 100; // Échelle basée sur une taille de référence de 100px
+            
+            // Fond avec dégradé
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#1e3a5f');
+            gradient.addColorStop(1, '#2c5282');
+            
+            // Fond arrondi
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.roundRect(0, 0, size, size, size * 0.15);
+            ctx.fill();
+            
+            // Style pour les lettres
+            ctx.fillStyle = '#4a90e2';
+            ctx.strokeStyle = '#357abd';
+            ctx.lineWidth = scale * 2;
+            ctx.font = `bold ${size * 0.6}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // Ombre pour effet 3D
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+            ctx.shadowBlur = scale * 3;
+            ctx.shadowOffsetX = scale * 1;
+            ctx.shadowOffsetY = scale * 2;
+            
+            // Dessiner "CR"
+            ctx.fillText('CR', centerX, centerY);
+            
+            // Reflet pour effet 3D
+            ctx.shadowColor = 'transparent';
+            const reflectGradient = ctx.createLinearGradient(0, 0, 0, size);
+            reflectGradient.addColorStop(0, 'rgba(255, 255, 255, 0.3)');
+            reflectGradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.1)');
+            reflectGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            
+            ctx.fillStyle = reflectGradient;
+            ctx.beginPath();
+            ctx.roundRect(0, 0, size, size, size * 0.15);
+            ctx.fill();
+        }
+        
+        // Générer une icône de taille spécifique
+        function generateIcon(canvasId, size) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            
+            // Effacer le canvas
+            ctx.clearRect(0, 0, size, size);
+            
+            // Dessiner le logo
+            drawLogo(ctx, size);
+        }
+        
+        // Télécharger une icône
+        function downloadIcon(canvasId, filename) {
+            const canvas = document.getElementById(canvasId);
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+        
+        // Générer toutes les icônes
+        function generateAllIcons() {
+            generateIcon('icon16', 16);
+            generateIcon('icon48', 48);
+            generateIcon('icon128', 128);
+            
+            // Télécharger automatiquement après un court délai
+            setTimeout(() => {
+                downloadIcon('icon16', 'icon16.png');
+                setTimeout(() => downloadIcon('icon48', 'icon48.png'), 500);
+                setTimeout(() => downloadIcon('icon128', 'icon128.png'), 1000);
+            }, 1000);
+        }
+        
+        // Polyfill pour roundRect si pas supporté
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function (x, y, width, height, radius) {
+                this.beginPath();
+                this.moveTo(x + radius, y);
+                this.lineTo(x + width - radius, y);
+                this.quadraticCurveTo(x + width, y, x + width, y + radius);
+                this.lineTo(x + width, y + height - radius);
+                this.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+                this.lineTo(x + radius, y + height);
+                this.quadraticCurveTo(x, y + height, x, y + height - radius);
+                this.lineTo(x, y + radius);
+                this.quadraticCurveTo(x, y, x + radius, y);
+                this.closePath();
+            };
+        }
+        
+        // Générer les icônes au chargement de la page
+        window.onload = function() {
+            generateIcon('icon16', 16);
+            generateIcon('icon48', 48);
+            generateIcon('icon128', 128);
+        };
+    </script>
+</body>
+</html>

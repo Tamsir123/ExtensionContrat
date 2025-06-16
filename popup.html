@@ -28,6 +28,18 @@
         .logo {
             font-size: 32px;
             margin-bottom: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .logo img {
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+            transition: transform 0.3s ease;
+        }
+        
+        .logo img:hover {
+            transform: scale(1.05);
         }
         
         .title {
@@ -257,7 +269,9 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo">📋</div>
+            <div class="logo">
+                <img src="icon128.png" alt="ConsentRadar Logo" style="width: 48px; height: 48px; object-fit: contain;">
+            </div>
             <div class="title">Consent Radar</div>
             <div class="subtitle">Analyse intelligente de contrats</div>
         </div>

@@ -1,7 +1,7 @@
 // Script de contenu ClairContrat (content.js)
 // Extension pour l'analyse intelligente de contrats
 
-console.log('🚀 Extension ClairContrat chargée sur:', window.location.href);
+console.log('🚀 Extension ConsentRadar chargée sur:', window.location.href);
 
 // Styles pour le surlignage amélioré
 const style = document.createElement('style');
@@ -13,7 +13,7 @@ style.textContent = `
     }
     
     .claircontrat-highlight::before {
-        content: "📋 Contrat détecté par ClairContrat";
+        content: "📋 Contrat détecté par ConsentRadar";
         position: absolute;
         top: -30px;
         left: 0;
@@ -72,7 +72,7 @@ document.head.appendChild(style);
 
 // Message d'accueil dans la console pour les développeurs
 console.log(`
-🤖 ClairContrat Extension v2.0
+🤖 ConsentRadar Extension v2.0
 📋 Détection intelligente de contrats activée
 🚀 Prêt à analyser les conditions générales !
 `);
@@ -94,7 +94,7 @@ function autoDetectContracts() {
         
         if (hasContract && !link.classList.contains('claircontract-detected')) {
             link.classList.add('claircontract-detected');
-            link.title = "Contrat détecté - Cliquez sur l'extension ClairContrat pour analyser";
+            link.title = "Contrat détecté - Cliquez sur l'extension ConsentRadar pour analyser";
             
             // Ajouter un badge discret
             if (!link.querySelector('.claircontract-badge')) {
@@ -164,7 +164,7 @@ document.addEventListener('keydown', (event) => {
         chrome.runtime.sendMessage?.({ action: 'openPopup' });
         
         // Afficher une notification visuelle
-        showNotification('Extension ClairContrat activée ! 🚀');
+        showNotification('Extension ConsentRadar activée ! 🚀');
     }
 });
 
